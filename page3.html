@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collage · III</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="theme-bauhaus" style="--bg-image: url('./page3/white.png');">
+    <nav class="nav-fracture" aria-label="navigation">
+        <a href="./index.html" data-label="I"><span class="label" data-label="I">I</span></a>
+        <a href="./page2.html" data-label="II"><span class="label" data-label="II">II</span></a>
+        <a href="./page3.html" data-label="III" class="is-active"><span class="label" data-label="III">III</span></a>
+    </nav>
+    <div class="corner-id">#202500096</div>
+    <main class="canvas" aria-label="Bauhaus Blocks">
+        <figure class="piece bh1"><img src="./page3/r.png" alt="red"></figure>
+        <figure class="piece bh2"><img src="./page3/b.png" alt="blue"></figure>
+        <figure class="piece bh3"><img src="./page3/yeelow.png" alt="yellow"></figure>
+        <figure class="piece bh4"><img src="./page3/black.png" alt="black"></figure>
+        <figure class="piece bh5"><img src="./page3/white.png" alt="white"></figure>
+        <!-- 复制层（微错位叠加，保持几何秩序） -->
+        <figure class="piece bh1 dup"><img src="./page3/r.png" alt=""></figure>
+        <figure class="piece bh2 dup"><img src="./page3/b.png" alt=""></figure>
+        <figure class="piece bh3 dup"><img src="./page3/yeelow.png" alt=""></figure>
+        <figure class="piece bh4 dup"><img src="./page3/black.png" alt=""></figure>
+        <figure class="piece bh5 dup"><img src="./page3/white.png" alt=""></figure>
+        <!-- 同时加入自由重叠层（早前风格），构成多层叠加 -->
+        <section class="free-layer" aria-hidden="true">
+            <figure class="piece f1"><img src="./page3/r.png" alt=""></figure>
+            <figure class="piece f2"><img src="./page3/b.png" alt=""></figure>
+            <figure class="piece f3"><img src="./page3/yeelow.png" alt=""></figure>
+            <figure class="piece f4"><img src="./page3/black.png" alt=""></figure>
+            <figure class="piece f5"><img src="./page3/white.png" alt=""></figure>
+            <figure class="piece f1 dup"><img src="./page3/r.png" alt=""></figure>
+            <figure class="piece f2 dup"><img src="./page3/b.png" alt=""></figure>
+            <figure class="piece f3 dup"><img src="./page3/yeelow.png" alt=""></figure>
+            <figure class="piece f4 dup"><img src="./page3/black.png" alt=""></figure>
+            <figure class="piece f5 dup"><img src="./page3/white.png" alt=""></figure>
+        </section>
+    </main>
+    <script>
+    (function() {
+        const canvas = document.querySelector('.canvas');
+        const copyLayer = document.querySelector('.copy-layer');
+        function rand(min, max) { return Math.random() * (max - min) + min; }
+
+        // 动态尝试加载 page3 目录中 1..226 的 PNG（兼容 01 与非补零命名）
+        let z = 50; let keySeq = 0;
+        const tryAdd = (name) => {
+            const piece = document.createElement('figure');
+            piece.className = 'piece';
+            piece.dataset.key = String(keySeq);
+            const img = document.createElement('img');
+            img.src = `./page3/${name}`;
+            img.alt = name;
+            piece.appendChild(img);
+            const left = rand(6, 70), top = rand(6, 78), width = rand(16, 28), rot = rand(-16, 16);
+            piece.style.left = left + 'vw';
+            piece.style.top = top + 'vh';
+            piece.style.width = width + 'vw';
+            piece.style.transform = `rotate(${rot}deg)`;
+            piece.style.zIndex = String(++z);
+            img.onload = () => {
+                // 主层
+                canvas.appendChild(piece);
+                // 复制层1
+                const c1 = piece.cloneNode(true);
+                c1.classList.add('copy'); c1.classList.add('rb');
+                c1.dataset.key = piece.dataset.key;
+                c1.style.zIndex = String(++z);
+                copyLayer.appendChild(c1);
+                // 复制层2
+                const c2 = piece.cloneNode(true);
+                c2.classList.add('copy'); c2.classList.add('alt');
+                c2.dataset.key = piece.dataset.key;
+                c2.style.zIndex = String(++z);
+                copyLayer.appendChild(c2);
+                keySeq += 1;
+            };
+            img.onerror = () => { /* 忽略不存在的文件 */ };
+        };
+
+        for (let n = 1; n <= 226; n++) {
+            const nn = String(n).padStart(2, '0');
+            // 优先尝试无补零版本，再尝试补零版本，避免重复加载
+            tryAdd(`${n} copy.png`);
+            if (n < 100) tryAdd(`${nn} copy.png`);
+        }
+
+        // 拖拽（主层）并同步复制层
+        let dragging = null; let startX = 0, startY = 0; let startLeft = 0, startTop = 0; let zTop = 200; let rafId = null;
+        function pxToVw(px) { return (px / window.innerWidth) * 100; }
+        function pxToVh(px) { return (px / window.innerHeight) * 100; }
+        function vwToPx(vw) { return (vw / 100) * window.innerWidth; }
+        function vhToPx(vh) { return (vh / 100) * window.innerHeight; }
+        function getComputedLeftTop(el) {
+            const cs = getComputedStyle(el);
+            const leftPx = cs.left.endsWith('vw') ? vwToPx(parseFloat(cs.left)) : (parseFloat(cs.left) || 0);
+            const topPx = cs.top.endsWith('vh') ? vhToPx(parseFloat(cs.top)) : (parseFloat(cs.top) || 0);
+            return { leftPx, topPx };
+        }
+        function onDown(e) {
+            const t = e.target.closest('.piece');
+            if (!t || t.classList.contains('copy')) return;
+            dragging = t;
+            const p = getComputedLeftTop(t);
+            startLeft = p.leftPx; startTop = p.topPx;
+            startX = e.clientX ?? (e.touches && e.touches[0].clientX) ?? 0;
+            startY = e.clientY ?? (e.touches && e.touches[0].clientY) ?? 0;
+            t.style.zIndex = String(++zTop);
+            t.classList.add('dragging');
+            document.body.classList.add('drag-mode');
+            e.preventDefault();
+        }
+        function onMove(e) {
+            if (!dragging) return;
+            const update = () => {
+                const cx = window._dragCx ?? 0;
+                const cy = window._dragCy ?? 0;
+                let nl = startLeft + (cx - startX);
+                let nt = startTop + (cy - startY);
+                const r = dragging.getBoundingClientRect();
+                const minL = -r.width * 0.2, minT = -r.height * 0.2;
+                const maxL = window.innerWidth - r.width * 0.8, maxT = window.innerHeight - r.height * 0.8;
+                nl = Math.min(Math.max(nl, minL), maxL);
+                nt = Math.min(Math.max(nt, minT), maxT);
+                const lvw = pxToVw(nl), tvh = pxToVh(nt);
+                dragging.style.left = lvw + 'vw';
+                dragging.style.top = tvh + 'vh';
+                const key = dragging.dataset.key;
+                if (key) {
+                    copyLayer.querySelectorAll(`.piece.copy[data-key="${key}"]`).forEach(el => {
+                        el.style.left = dragging.style.left;
+                        el.style.top = dragging.style.top;
+                        el.style.width = dragging.style.width;
+                    });
+                }
+                rafId = null;
+            };
+            window._dragCx = e.clientX ?? (e.touches && e.touches[0].clientX) ?? 0;
+            window._dragCy = e.clientY ?? (e.touches && e.touches[0].clientY) ?? 0;
+            if (!rafId) rafId = requestAnimationFrame(update);
+        }
+        function onUp() { if (!dragging) return; dragging.classList.remove('dragging'); document.body.classList.remove('drag-mode'); dragging = null; }
+        canvas.addEventListener('mousedown', onDown);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+        canvas.addEventListener('touchstart', onDown, { passive: false });
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('touchend', onUp);
+    })();
+    </script>
+</body>
+</html>
+

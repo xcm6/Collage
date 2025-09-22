@@ -1,0 +1,307 @@
+/* Base */
+:root { --bg: #0e0f12; }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); }
+
+/* Canvas */
+.canvas {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  background:
+    radial-gradient(600px 400px at 20% 10%, #151821 0%, rgba(14,15,18,0) 60%),
+    radial-gradient(800px 600px at 80% 20%, #0f131b 0%, rgba(14,15,18,0) 70%),
+    #0e0f12;
+}
+.nav-fracture {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  display: flex;
+  gap: 16px;
+  pointer-events: none; /* 容器不接收事件，子元素接收 */
+}
+.nav-fracture a {
+  pointer-events: auto;
+  position: relative;
+  display: inline-block;
+  text-decoration: none;
+  color: #fff;
+  font: 800 clamp(18px, 4vw, 48px)/1.1 ui-serif, Georgia, "Times New Roman", serif;
+  letter-spacing: 0.08em;
+  isolation: isolate;
+  text-shadow:
+    1px 0 0 rgba(255,0,0,.55),
+    -1px 0 0 rgba(0,180,255,.55),
+    0 1px 18px rgba(0,0,0,.45);
+}
+.nav-fracture a .layer {
+  position: absolute;
+  inset: 0;
+  content: "";
+  will-change: transform, opacity;
+}
+.nav-fracture a span.label { position: relative; display: inline-block; opacity: .92; mix-blend-mode: screen; }
+/* 裂变层 + RGB 叠加：将裂变层绑定到 label 上，避免影响点击区域 */
+.nav-fracture a .label::before,
+.nav-fracture a .label::after {
+  content: attr(data-label);
+  position: absolute;
+  inset: 0;
+  color: #ffffff;
+  filter: blur(.2px);
+}
+/* 红/蓝通道偏移（色散） */
+.nav-fracture a .label::before { transform: translate(-1.2px, -0.4px) rotate(-2deg); color: rgba(255,0,0,.75); mix-blend-mode: screen; opacity: .9; }
+.nav-fracture a .label::after  { transform: translate(1.2px, 0.4px) rotate(2deg);  color: rgba(0,180,255,.75); mix-blend-mode: screen; opacity: .85; }
+/* 再叠两层上下错位，营造撕裂（用额外阴影模拟纸边）*/
+.nav-fracture a .label::before { text-shadow: 0 10px 18px rgba(0,0,0,.45); }
+.nav-fracture a .label::after  { text-shadow: 0 10px 18px rgba(0,0,0,.45); }
+.nav-fracture a:hover .label::before { transform: translate(-2px, -0.8px) rotate(-4deg); opacity: 1; }
+.nav-fracture a:hover .label::after  { transform: translate(2px, 0.8px) rotate(4deg);  opacity: 1; }
+.nav-fracture a.is-active span.label { text-decoration: underline; text-decoration-thickness: .12em; text-underline-offset: .12em; }
+
+/* 每页风格微调入口（可按需覆盖） */
+.theme-paper .nav-fracture a { color: #f2efe6; }
+.theme-paper .nav-fracture a::before { color: #ffffff; }
+.theme-paper .nav-fracture a::after { color: #d8d1c1; }
+.canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(1200px 800px at 70% 20%, rgba(0,0,0,0.45), rgba(0,0,0,0) 60%),
+    linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.25)),
+    var(--bg-image, none);
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: multiply, multiply, normal;
+  filter: saturate(.9) contrast(.95);
+}
+
+/* 右上角编号 */
+.corner-id {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  z-index: 1000;
+  color: rgba(255,255,255,.9);
+  font: 700 clamp(10px, 1.6vw, 14px)/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  letter-spacing: 0.06em;
+  text-shadow: 0 10px 18px rgba(0,0,0,.45), 1px 0 0 rgba(255,0,0,.4), -1px 0 0 rgba(0,180,255,.4);
+  pointer-events: none;
+}
+
+/* Page2 报纸风角标 */
+.badge-tl, .badge-br {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  color: #ffffff;
+  text-shadow: 0 2px 0 rgba(0,0,0,.65), 0 8px 18px rgba(0,0,0,.45);
+  font: 800 clamp(14px, 3vw, 32px)/1 ui-serif, Georgia, "Times New Roman", serif;
+  letter-spacing: 0.04em;
+  mix-blend-mode: normal;
+  -webkit-text-stroke: .6px rgba(0,0,0,.5);
+}
+.badge-tl { top: 12px; left: 14px; }
+.badge-br { bottom: 12px; right: 14px; }
+.theme-paper .badge-tl, .theme-paper .badge-br { color: #ffffff; mix-blend-mode: normal; }
+
+/* Page1 视觉标题：“疯狂磕药”风格（RGB分离 + 波形扭曲） */
+.p1-title {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 800;
+  font: 900 clamp(28px, 8vw, 120px)/0.9 ui-serif, Georgia, "Times New Roman", serif;
+  letter-spacing: 0.06em;
+  color: #f7f7f7;
+  text-align: center;
+  mix-blend-mode: difference;
+}
+.p1-title::before,
+.p1-title::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+}
+.p1-title { text-shadow: 0 0 24px rgba(255,255,255,.25); }
+.p1-title::before { color: rgba(255,0,120,.8); transform: translate(-2px, -1px); filter: blur(.3px); mix-blend-mode: screen; }
+.p1-title::after  { color: rgba(0,200,255,.75); transform: translate(2px, 1px);  filter: blur(.3px); mix-blend-mode: screen; }
+
+/* 报纸角标粗糙底纹 */
+.badge-tl::after, .badge-br::after {
+  content: "";
+  position: absolute;
+  inset: -6px -10px;
+  z-index: -1;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 1px, rgba(0,0,0,0) 1px 3px),
+    radial-gradient(1200px 400px at 20% 50%, rgba(255,255,255,.06), rgba(255,255,255,0)),
+    rgba(255,255,255,.08);
+  border: 1px solid rgba(0,0,0,.35);
+  filter: contrast(1.15) saturate(.9);
+  box-shadow: 0 8px 20px rgba(0,0,0,.35);
+}
+
+@keyframes chroma-warp {
+  0%   { transform: translate(-50%, -50%) skewX(0deg) skewY(0deg); }
+  33%  { transform: translate(calc(-50% + .6vw), calc(-50% + .3vh)) skewX(2deg) skewY(-1deg); }
+  66%  { transform: translate(calc(-50% - .6vw), calc(-50% - .4vh)) skewX(-2deg) skewY(1deg); }
+  100% { transform: translate(-50%, -50%) skewX(0deg) skewY(0deg); }
+}
+.p1-title { animation: none; }
+
+.piece {
+  position: absolute;
+  transform-origin: center;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.45));
+  mix-blend-mode: screen; /* 让浅色小票彼此叠加产生发光感 */
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  will-change: transform, left, top;
+  contain: paint;
+}
+.piece img { display: block; width: 100%; height: auto; transform: translateZ(0); }
+
+/* 手感：轻微入场与悬停挪移 */
+.piece { transition: transform .35s ease, filter .35s ease, opacity .35s ease; }
+.piece:hover { transform: translateY(-4px) rotate(var(--rot, 0deg)) scale(1.02); filter: drop-shadow(0 16px 30px rgba(0,0,0,0.55)); }
+
+/* 排布：使用 CSS 变量控制旋转与尺寸（更易微调） */
+.i1  { --rot: -6deg; left: 8vw;  top: 8vh;  width: 26vw; transform: rotate(var(--rot)); }
+.i2  { --rot: 8deg;  left: 20vw; top: 18vh; width: 22vw; transform: rotate(var(--rot)); }
+.i3  { --rot: -2deg; left: 36vw; top: 10vh; width: 24vw; transform: rotate(var(--rot)); }
+.i4  { --rot: 14deg; left: 54vw; top: 6vh;  width: 20vw; transform: rotate(var(--rot)); }
+.i5  { --rot: -10deg;left: 66vw; top: 20vh; width: 24vw; transform: rotate(var(--rot)); }
+.i6  { --rot: 5deg;  left: 10vw; top: 40vh; width: 28vw; transform: rotate(var(--rot)); }
+.i7  { --rot: -12deg;left: 32vw; top: 34vh; width: 20vw; transform: rotate(var(--rot)); }
+.i8  { --rot: 4deg;  left: 46vw; top: 42vh; width: 26vw; transform: rotate(var(--rot)); }
+.i9  { --rot: -4deg; left: 64vw; top: 40vh; width: 22vw; transform: rotate(var(--rot)); }
+.i10 { --rot: 2deg;  left: 24vw; top: 60vh; width: 24vw; transform: rotate(var(--rot)); }
+.i11 { --rot: -8deg; left: 48vw; top: 64vh; width: 28vw; transform: rotate(var(--rot)); }
+
+/* 小屏优化：缩放并收拢分布 */
+@media (max-width: 680px) {
+  .i1  { left: 6vw;  top: 6vh;  width: 60vw; }
+  .i2  { left: 28vw; top: 12vh; width: 56vw; }
+  .i3  { left: 10vw; top: 24vh; width: 58vw; }
+  .i4  { left: 30vw; top: 30vh; width: 52vw; }
+  .i5  { left: 40vw; top: 44vh; width: 58vw; }
+  .i6  { left: 4vw;  top: 48vh; width: 64vw; }
+  .i7  { left: 22vw; top: 56vh; width: 50vw; }
+  .i8  { left: 8vw;  top: 66vh; width: 60vw; }
+  .i9  { left: 34vw; top: 72vh; width: 50vw; }
+  .i10 { left: 6vw;  top: 82vh; width: 58vw; }
+  .i11 { left: 26vw; top: 90vh; width: 62vw; }
+}
+
+/* --- Page3 混沌复制层效果 --- */
+.copy-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.piece.copy {
+  mix-blend-mode: difference;
+  opacity: .85;
+  animation: none; /* 取消抖动/闪烁 */
+}
+.piece.copy.alt { mix-blend-mode: exclusion; opacity: .7; animation: none; }
+.piece.copy.rb  { filter: hue-rotate(12deg) saturate(1.2); animation: none; }
+
+/* 拖拽时尽量减少重绘与混合开销 */
+.dragging { transition: none !important; will-change: left, top; }
+.drag-mode .piece.copy { mix-blend-mode: normal; opacity: .45; }
+
+/* page3 稳定性优化：主层不参与混合，仅复制层参与，避免 hover 闪烁 */
+.theme-chaos .piece { mix-blend-mode: normal; }
+
+@keyframes jitter {
+  0%   { transform: translate(-0.6px, 0.4px) rotate(var(--rot, 0deg)) scale(1.005); }
+  50%  { transform: translate(0.8px, -0.6px) rotate(calc(var(--rot, 0deg) + .6deg)) scale(1.0); }
+  100% { transform: translate(-0.6px, 0.4px) rotate(var(--rot, 0deg)) scale(1.005); }
+}
+
+
+/* --- Page3 包豪斯色块风格（严格几何、无阴影、无动态） --- */
+.theme-bauhaus { --u: 2.2vw; --ox: 10vw; --oy: 6vh; }
+.theme-bauhaus .canvas { background: #f2f0e9 !important; }
+.theme-bauhaus .piece { mix-blend-mode: normal; filter: none; box-shadow: none; transition: none; }
+.theme-bauhaus .piece:hover { transform: none; filter: none; }
+.theme-bauhaus .piece img { width: 100%; height: 100%; object-fit: cover; }
+
+/* 模块化网格布置（比例可按需微调） */
+.bh1 { left: calc(var(--ox) + var(--u) * 6);  top: calc(var(--oy) + var(--u) * 5);  width: calc(var(--u) * 10); height: calc(var(--u) * 10); border-radius: 50%; overflow: hidden; }
+.bh2 { left: calc(var(--ox) + var(--u) * 18); top: calc(var(--oy) + var(--u) * 6);  width: calc(var(--u) * 14); height: calc(var(--u) * 6); }
+.bh3 { left: calc(var(--ox) + var(--u) * 30); top: calc(var(--oy) + var(--u) * 14); width: calc(var(--u) * 8);  height: calc(var(--u) * 8); }
+.bh4 { left: calc(var(--ox) + var(--u) * 6);  top: calc(var(--oy) + var(--u) * 22); width: calc(var(--u) * 26); height: calc(var(--u) * 2.2); }
+.bh5 { left: calc(var(--ox) + var(--u) * 36); top: calc(var(--oy) + var(--u) * 4);  width: calc(var(--u) * 12); height: calc(var(--u) * 16); }
+
+@media (max-width: 800px) {
+  .theme-bauhaus { --u: 5vw; }
+}
+
+/* 结合：为五个色块添加一层错位复制，保持几何感 */
+.theme-bauhaus .piece.dup { opacity: .95; mix-blend-mode: normal; filter: none; box-shadow: none; }
+.bh1.dup { transform: translate(0.6vw, 0.4vh); z-index: 6; }
+.bh2.dup { transform: translate(0.5vw, 0.3vh); z-index: 6; }
+.bh3.dup { transform: translate(0.4vw, 0.5vh); z-index: 6; }
+.bh4.dup { transform: translate(0.8vw, 0.2vh); z-index: 6; }
+.bh5.dup { transform: translate(0.6vw, 0.6vh); z-index: 6; }
+
+/* 自由（经典重叠）模式：使用原始大尺寸排布与乘法叠色 */
+.theme-bauhaus.mode-free .bh1,
+.theme-bauhaus.mode-free .bh2,
+.theme-bauhaus.mode-free .bh3,
+.theme-bauhaus.mode-free .bh4,
+.theme-bauhaus.mode-free .bh5 { border-radius: 0; }
+.theme-bauhaus.mode-free .bh1 { left: 8vw;  top: 10vh; width: 26vw; height: 36vh; }
+.theme-bauhaus.mode-free .bh2 { left: 38vw; top: 8vh;  width: 20vw; height: 20vh; }
+.theme-bauhaus.mode-free .bh3 { left: 62vw; top: 12vh; width: 18vw; height: 28vh; }
+.theme-bauhaus.mode-free .bh4 { left: 20vw; top: 54vh; width: 34vw; height: 26vh; }
+.theme-bauhaus.mode-free .bh5 { left: 60vw; top: 54vh; width: 22vw; height: 22vh; }
+.theme-bauhaus.mode-free .piece.dup { mix-blend-mode: multiply; opacity: .92; }
+.theme-bauhaus.mode-free .bh1.dup { transform: translate(1vw, .8vh); }
+.theme-bauhaus.mode-free .bh2.dup { transform: translate(.8vw, .6vh); }
+.theme-bauhaus.mode-free .bh3.dup { transform: translate(.6vw, .8vh); }
+.theme-bauhaus.mode-free .bh4.dup { transform: translate(1.2vw, .6vh); }
+.theme-bauhaus.mode-free .bh5.dup { transform: translate(.9vw, .9vh); }
+
+/* 样式切换按钮（轻量） */
+.style-toggle {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1200;
+  padding: 6px 10px;
+  font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  color: #111;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.4);
+  border-radius: 10px;
+  box-shadow: 0 6px 14px rgba(0,0,0,.2);
+  cursor: pointer;
+}
+@media (max-width: 640px) { .style-toggle { top: 44px; } }
+
+/* 同时加入“自由重叠”层：使用与早前相同的大尺寸运动学布局 */
+.free-layer .piece { position: absolute; mix-blend-mode: multiply; opacity: .92; box-shadow: none; filter: none; }
+.f1 { left: 8vw;  top: 10vh; width: 26vw; height: 36vh; }
+.f2 { left: 38vw; top: 8vh;  width: 20vw; height: 20vh; }
+.f3 { left: 62vw; top: 12vh; width: 18vw; height: 28vh; }
+.f4 { left: 20vw; top: 54vh; width: 34vw; height: 26vh; }
+.f5 { left: 60vw; top: 54vh; width: 22vw; height: 22vh; }
+.free-layer .piece.dup { opacity: .9; }
+.f1.dup { transform: translate(1vw, .8vh); }
+.f2.dup { transform: translate(.8vw, .6vh); }
+.f3.dup { transform: translate(.6vw, .8vh); }
+.f4.dup { transform: translate(1.2vw, .6vh); }
+.f5.dup { transform: translate(.9vw, .9vh); }
